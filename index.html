@@ -1,1 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+    <meta charset="utf-8" />
+    <title>Grand total projects property in 2018</title>
+    <script src="https://d3js.org/d3.v5.js"></script>
+    <link href="//cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" rel="stylesheet" data-semver="8.0.1" data-require="normalize@*" />
+    <style>
+        #chart {
+            height: 360px;
+            width: 360px;
+            position: relative;
+        }
+        
+        .legend {
+            font-size: 14px;
+        }
+        
+        .tooltip {
+            background: rgb(247, 240, 240);
+            box-shadow: 0 0 5px #999;
+            color: #000;
+            display: none;
+            font-size: 11px;
+            left: 130px;
+            padding: 10px;
+            position: absolute;
+            text-align: center;
+            top: 95px;
+            width: 80px;
+            z-index: 10;
+        }
+        
+        rect {
+            stroke-width: 2;
+        }
+    </style>
+</head>
+
+
+
+<body>
+
+    <h2>Grand total projects property in 2018</h2>
+    <div id="chart"></div>
+    <script data-require="d3@*" data-semver="5.0.0" src="https://d3js.org/d3.v4.min.js"></script>
+    <script>
+        (function(d3) {
+            'use strict';
+
+            var width = 360;
+            var height = 360;
+            var radius = Math.min(width, height) / 2;
+            var donutWidth = 60;
+            var legendRectSize = 20;
+            var legendSpacing = 5;
+
+            var color = d3.scaleOrdinal(d3.schemeCategory20b);
+
+            var svg = d3.select('#chart')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('transform', 'translate(' + (width / 2) +
+                    ',' + (height / 2) + ')');
+
+            var arc = d3.arc()
+                .innerRadius(radius - donutWidth)
+                .outerRadius(radius);
+
+            var pie = d3.pie()
+                .value(function(d) {
+                    return d.count;
+                })
+                .sort(null);
+
+            var tooltip = d3.select('#chart')
+                .append('div')
+                .attr('class', 'tooltip');
+
+            tooltip.append('div')
+                .attr('class', 'unit_type');
+
+            tooltip.append('div')
+                .attr('class', 'count');
+
+            tooltip.append('div')
+                .attr('class', 'percent');
+
+            d3.csv('unit_type.csv', function(error, dataset) {
+                dataset.forEach(function(d) {
+                    d.count = +d.count;
+                });
+
+                var path = svg.selectAll('path')
+                    .data(pie(dataset))
+                    .enter()
+                    .append('path')
+                    .attr('d', arc)
+                    .attr('fill', function(d, i) {
+                        return color(d.data.unit_type);
+                    });
+
+                path.on('mouseover', function(d) {
+                    var total = d3.sum(dataset.map(function(d) {
+                        return d.count;
+                    }));
+                    var percent = Math.round(1000 * d.data.count / total) / 10;
+                    tooltip.select('.unit_type').html(d.data.unit_type);
+                    tooltip.select('.count').html(d.data.count);
+                    tooltip.select('.percent').html(percent + '%');
+                    tooltip.style('display', 'block');
+                });
+
+                path.on('mouseout', function() {
+                    tooltip.style('display', 'none');
+                });
+
+
+                path.on('mousemove', function(d) {
+                    tooltip.style('top', (d3.event.pageY + 10) + 'px')
+                        .style('left', (d3.event.pageX + 10) + 'px');
+                });
+
+
+                var legend = svg.selectAll('.legend')
+                    .data(color.domain())
+                    .enter()
+                    .append('g')
+                    .attr('class', 'legend')
+                    .attr('transform', function(d, i) {
+                        var height = legendRectSize + legendSpacing;
+                        var offset = height * color.domain().length / 2;
+                        var horz = -2 * legendRectSize;
+                        var vert = i * height - offset;
+                        return 'translate(' + horz + ',' + vert + ')';
+                    });
+
+                legend.append('rect')
+                    .attr('width', legendRectSize)
+                    .attr('height', legendRectSize)
+                    .style('fill', color)
+                    .style('stroke', color);
+
+                legend.append('text')
+                    .attr('x', legendRectSize + legendSpacing)
+                    .attr('y', legendRectSize - legendSpacing)
+                    .text(function(d) {
+                        return d;
+                    });
+            });
+        })(window.d3);
+    </script>
+    <!--https://www.tutorialspoint.com/d3js/d3js_installation.htm-->
+    <!--https://medium.freecodecamp.org/learn-d3-js-in-5-minutes-c5ec29fb0725-->
+    <!--https://www.tutorialsteacher.com/d3js/setup-d3js-development-environment-->
+
+</body>
+
+</html>
